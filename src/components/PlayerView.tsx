@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Server, ChevronRight, AlertCircle, RefreshCw, Shield, Sparkles } from "lucide-react";
+import { ArrowLeft, Server, ChevronRight, AlertCircle, RefreshCw, Shield, Sparkles, Play } from "lucide-react";
 import { siteConfig, ServerProvider } from "@/lib/siteConfig";
 import { MediaDetails } from "@/lib/tmdb";
 import { saveWatchProgress } from "@/lib/storage";
@@ -18,6 +18,7 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
   const [iframeKey, setIframeKey] = useState(0);
+  const [shieldActive, setShieldActive] = useState(true);
 
   const title = details?.title || details?.name || "Movie";
 
@@ -26,6 +27,32 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
     type === "tv"
       ? selectedServer.buildTvUrl(id, season, episode)
       : selectedServer.buildMovieUrl(id);
+
+  // Method B: Reset Click-Shield when server, episode, or media ID changes
+  useEffect(() => {
+    setShieldActive(true);
+  }, [selectedServer.id, season, episode, id]);
+
+  // Method B: The Click-Shield Handler
+  // Absorbs the first tap that ad-scripts use to trigger popups, disarms window.open, and then starts video
+  const handleShieldClick = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Disarm window.open for 2.5 seconds to neutralize background popup tabs
+    const originalOpen = window.open;
+    window.open = function (...args) {
+      console.warn("Click-Shield blocked popup attempt:", args[0]);
+      return null;
+    };
+
+    setTimeout(() => {
+      window.open = originalOpen;
+    }, 2500);
+
+    // Drop the shield to allow video playback directly
+    setShieldActive(false);
+  };
 
   // Save to "Continue Watching" automatically
   useEffect(() => {
@@ -56,6 +83,7 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
   };
 
   const handleRefresh = () => {
+    setShieldActive(true);
     setIframeKey((prev) => prev + 1);
   };
 
@@ -96,8 +124,8 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
         </div>
       </div>
 
-      {/* Main Video Frame (Trick 2: Sandboxed against top navigation and external hijacking) */}
-      <div className="flex-1 w-full bg-black relative flex items-center justify-center">
+      {/* Main Video Frame with Method B Click-Shield */}
+      <div className="flex-1 w-full bg-black relative flex items-center justify-center overflow-hidden">
         <iframe
           key={`${selectedServer.id}-${streamUrl}-${iframeKey}`}
           src={streamUrl}
@@ -106,6 +134,26 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
           allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
           referrerPolicy="origin"
         />
+
+        {/* Method B: Click-Shield Layer */}
+        {shieldActive && (
+          <div
+            onClick={handleShieldClick}
+            onTouchEnd={handleShieldClick}
+            className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center cursor-pointer group transition-all"
+          >
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-netflix-red/90 hover:bg-netflix-red text-white flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110 active:scale-95">
+              <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-current ml-1" />
+            </div>
+            <p className="mt-3 text-sm sm:text-base font-bold text-white tracking-wide drop-shadow-md">
+              Tap to Play
+            </p>
+            <p className="text-[11px] text-zinc-400 mt-1 flex items-center gap-1">
+              <Shield className="w-3.5 h-3.5 text-emerald-400" />
+              Click-Shield Active
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Controls & Server Switcher Footer */}
