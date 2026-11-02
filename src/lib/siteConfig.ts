@@ -29,11 +29,11 @@ export const siteConfig = {
       buildTvUrl: (id, s, e) => `https://embed.vidrift.net/embed/tv/${id}/${s}/${e}`,
     },
     {
-      id: "twoembed",
-      name: "Server 3 (2Embed)",
-      badge: "Working Backup",
-      buildMovieUrl: (id) => `https://www.2embed.cc/embed/${id}`,
-      buildTvUrl: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+      id: "vidnest",
+      name: "Server 3 (VidNest)",
+      badge: "Clean & Ultra-Fast",
+      buildMovieUrl: (id) => `https://vidnest.fun/movie/${id}`,
+      buildTvUrl: (id, s, e) => `https://vidnest.fun/tv/${id}/${s}/${e}`,
     },
   ] as ServerProvider[],
 
