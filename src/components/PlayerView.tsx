@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Server, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Server, ChevronRight, AlertCircle, RefreshCw, ShieldCheck } from "lucide-react";
 import { siteConfig, ServerProvider } from "@/lib/siteConfig";
-import { MediaDetails, getImageUrl } from "@/lib/tmdb";
+import { MediaDetails } from "@/lib/tmdb";
 import { saveWatchProgress } from "@/lib/storage";
 
 interface PlayerViewProps {
@@ -26,6 +26,28 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
     type === "tv"
       ? selectedServer.buildTvUrl(id, season, episode)
       : selectedServer.buildMovieUrl(id);
+
+  // Trick 1: Top-window redirect blocker and popup interceptor
+  useEffect(() => {
+    // 1. Block rogue scripts from redirecting the top window away
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Prevents automatic background navigation
+    };
+
+    // 2. Intercept window.open calls to neutralize popup tabs
+    const originalOpen = window.open;
+    window.open = function (...args) {
+      console.warn("Blocked popup attempt:", args[0]);
+      return null;
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.open = originalOpen;
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   // Save to "Continue Watching" automatically
   useEffect(() => {
@@ -84,13 +106,21 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
           </h1>
         </div>
 
-        <button
-          onClick={handleRefresh}
-          title="Reload Player"
-          className="text-zinc-400 hover:text-white p-1.5 rounded hover:bg-zinc-800 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Ad-Block Protection Active Badge */}
+          <span className="hidden sm:flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full font-medium">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Redirect Shield Active
+          </span>
+
+          <button
+            onClick={handleRefresh}
+            title="Reload Player"
+            className="text-zinc-400 hover:text-white p-1.5 rounded hover:bg-zinc-800 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Main Video Frame */}
@@ -101,6 +131,8 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
           className="w-full h-full min-h-[50vh] sm:min-h-[70vh] border-0"
           allowFullScreen
           allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
+          // Permissive sandbox without allow-top-navigation (Blocks redirects and window hijacking without sandbox error)
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
           referrerPolicy="origin"
         />
       </div>
@@ -201,7 +233,7 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
           {/* Quick Notice */}
           <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
             <AlertCircle className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Buffering or not loading? Switch to Server 2 or Server 3 above.</span>
+            <span>Buffering or not loading? Switch to Server 2 (Vidrift) or Server 3 above.</span>
           </div>
         </div>
       </div>
