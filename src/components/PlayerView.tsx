@@ -104,8 +104,6 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
           className="w-full h-full min-h-[50vh] sm:min-h-[72vh] border-0"
           allowFullScreen
           allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
-          // Trick 2: Permissive sandbox without allow-top-navigation (Blocks redirects and window hijacking)
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
           referrerPolicy="origin"
         />
       </div>
