@@ -100,9 +100,7 @@ export default function PlayerView({ id, type, details }: PlayerViewProps) {
           src={streamUrl}
           className="w-full h-full min-h-[50vh] sm:min-h-[70vh] border-0"
           allowFullScreen
-          allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-          // Strict ad-killing sandbox: blocks popups and redirects, allows video play
-          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+          allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
           referrerPolicy="origin"
         />
       </div>
