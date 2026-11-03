@@ -12,7 +12,7 @@ export const siteConfig = {
   description: "Unlimited streaming of the latest Bollywood, Hollywood, and South Indian movies and series.",
   accentColor: "#E50914", // Netflix Red
   
-  // Clean, Low-Ad Players (Vidrift, CineSrc, VidCore, VidLink)
+  // Clean, Low-Ad Players (Vidrift, CineSrc, VidCore, VidLink, Vidy, Vidbolt, Vidly)
   servers: [
     {
       id: "vidrift",
@@ -41,6 +41,27 @@ export const siteConfig = {
       badge: "Fast HD • Minimal Ads",
       buildMovieUrl: (id) => `https://vidlink.pro/movie/${id}?primaryColor=e50914`,
       buildTvUrl: (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}?primaryColor=e50914`,
+    },
+    {
+      id: "vidy",
+      name: "Server 5 (Vidy)",
+      badge: "Multi-Sub • 1 Ad Max",
+      buildMovieUrl: (id) => `https://www.vidy.st/movie/${id}`,
+      buildTvUrl: (id, s, e) => `https://www.vidy.st/tv/${id}/${s}/${e}`,
+    },
+    {
+      id: "vidbolt",
+      name: "Server 6 (Vidbolt)",
+      badge: "Ultra Fast • 1 Ad Max",
+      buildMovieUrl: (id) => `https://vidbolt.xyz/movie/${id}`,
+      buildTvUrl: (id, s, e) => `https://vidbolt.xyz/tv/${id}/${s}/${e}`,
+    },
+    {
+      id: "vidly",
+      name: "Server 7 (Vidly)",
+      badge: "Clean • Fast HD",
+      buildMovieUrl: (id) => `https://vidly.pro/movie/${id}?color=e50914`,
+      buildTvUrl: (id, s, e) => `https://vidly.pro/tv/${id}/${s}/${e}?color=e50914`,
     },
   ] as ServerProvider[],
 
