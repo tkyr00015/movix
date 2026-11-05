@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, X, Menu } from "lucide-react";
@@ -11,6 +11,8 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -26,11 +28,65 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Sync search input if user lands directly on /search?q=...
+  useEffect(() => {
+    if (pathname === "/search") {
+      const q = new URLSearchParams(window.location.search).get("q");
+      if (q) {
+        setSearchQuery(q);
+        setSearchOpen(true);
+      }
+    }
+  }, [pathname]);
+
+  // Click outside to collapse search bar if empty
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        if (!searchQuery.trim()) {
+          setSearchOpen(false);
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [searchQuery]);
+
+  const toggleSearch = () => {
+    if (!searchOpen) {
+      setSearchOpen(true);
+      setTimeout(() => inputRef.current?.focus(), 80);
+    } else if (!searchQuery.trim()) {
+      setSearchOpen(false);
+    } else {
+      handleSearchSubmit();
+    }
+  };
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchOpen(false);
+    }
+  };
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSearchQuery("");
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      if (searchQuery) {
+        setSearchQuery("");
+      } else {
+        setSearchOpen(false);
+        inputRef.current?.blur();
+      }
     }
   };
 
@@ -74,33 +130,50 @@ export default function Navbar() {
 
         {/* Right Side: Search & Profile */}
         <div className="flex items-center gap-4">
-          {/* Search Box */}
-          <div className="relative flex items-center">
-            {searchOpen ? (
-              <form onSubmit={handleSearchSubmit} className="flex items-center">
-                <input
-                  type="text"
-                  placeholder="Titles, people, genres..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                  className="w-48 sm:w-64 bg-black/80 border border-zinc-600 text-white text-xs sm:text-sm px-3 py-1.5 rounded-sm focus:outline-none focus:border-white transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(false)}
-                  className="ml-2 text-zinc-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </form>
-            ) : (
+          {/* Netflix-Style Expandable Search Box */}
+          <div
+            ref={searchContainerRef}
+            className={`relative flex items-center transition-all duration-300 ease-in-out ${
+              searchOpen
+                ? "w-48 sm:w-64 md:w-72 bg-black/90 border border-white px-2.5 py-1.5 shadow-lg"
+                : "w-9 h-9 bg-transparent border border-transparent justify-center"
+            }`}
+          >
+            {/* Search Icon / Toggle */}
+            <button
+              type="button"
+              onClick={toggleSearch}
+              aria-label="Search"
+              className="text-white hover:text-zinc-200 transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none"
+            >
+              <Search className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+            </button>
+
+            {/* Hidden / Expanded Search Input Form */}
+            <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center min-w-0">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Titles, people, genres"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                tabIndex={searchOpen ? 0 : -1}
+                className={`bg-transparent text-white text-xs sm:text-sm placeholder:text-zinc-400 focus:outline-none border-none transition-opacity duration-300 w-full pl-2 ${
+                  searchOpen ? "opacity-100" : "opacity-0 w-0 pointer-events-none p-0"
+                }`}
+              />
+            </form>
+
+            {/* Clear Button (Netflix 'X' inside input) */}
+            {searchOpen && searchQuery && (
               <button
-                aria-label="Search"
-                onClick={() => setSearchOpen(true)}
-                className="text-zinc-200 hover:text-white transition-colors"
+                type="button"
+                onClick={handleClear}
+                aria-label="Clear search"
+                className="text-zinc-400 hover:text-white transition-colors flex-shrink-0 ml-1 p-0.5 focus:outline-none"
               >
-                <Search className="w-5 h-5" />
+                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             )}
           </div>
